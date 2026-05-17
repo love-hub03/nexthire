@@ -1,11 +1,9 @@
-### Upload Resume
-POST http://localhost:5000/api/resume/upload
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMDk3ZmUzZDNhM2M3ZTMwYzhkNWUwOCIsImlhdCI6MTc3OTAwNzU0MywiZXhwIjoxNzc5NjEyMzQzfQ.35NsMBRD_5ifrP65sj_-YhpA5NgVISrW9WLAq0x1O9o
-Content-Type: multipart/form-data; boundary=----FormBoundary
+### Test Readiness via Node
+POST http://localhost:5000/api/readiness/check
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMDk3ZmUzZDNhM2M3ZTMwYzhkNWUwOCIsImlhdCI6MTc3OTAyODI1MiwiZXhwIjoxNzc5NjMzMDUyfQ.vnNgR47DUj9nKNCCkcLliJee3mbVG-HHFpeehg1aoKg
+Content-Type: application/json
 
-------FormBoundary
-Content-Disposition: form-data; name="resume"; filename="resume.pdf"
-Content-Type: application/pdf
-
-< C:\Users\lovep\Downloads\kismat_resume-Mern.pdf
-------FormBoundary--
+{
+  "jobDescription": "We are looking for a frontend developer with React, JavaScript, TypeScript, CSS, Git and NodeJS experience.",
+  "jobTitle": "Frontend Developer Intern"
+}

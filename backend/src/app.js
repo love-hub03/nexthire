@@ -40,5 +40,7 @@ app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/profile', require('./routes/profile.routes'));
 app.use('/api/resume', require('./routes/resume.routes'));
 app.use('/api/jobs', require('./routes/job.routes'));
+app.use('/api/readiness', require('./routes/readiness.routes'));
+app.use('/api/roadmap', require('./routes/roadmap.routes'));
 
 module.exports = app;
