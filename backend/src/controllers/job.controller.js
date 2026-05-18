@@ -25,18 +25,19 @@ const getJobs = async (req, res) => {
       }
     });
 
-    const jobs = response.data.data.map(job => ({
-      id: job.job_id,
-      title: job.job_title,
-      company: job.employer_name,
-      location: job.job_city || job.job_country,
-      description: job.job_description?.substring(0, 500) + '...',
-      applyUrl: job.job_apply_link,
-      postedAt: job.job_posted_at_datetime_utc,
-      isRemote: job.job_is_remote,
-      employmentType: job.job_employment_type
-    }));
-
+   const jobs = response.data.data.map(job => ({
+  id: job.job_id,
+  title: job.job_title,
+  company: job.employer_name,
+  location: job.job_city || job.job_country,
+  description: job.job_description?.substring(0, 500) + '...',
+  applyUrl: job.job_apply_link,
+  postedAt: job.job_posted_at_datetime_utc,
+  isRemote: job.job_is_remote,
+  employmentType: job.job_employment_type,
+  source: job.job_publisher || 'Job Board',
+  companyLogo: job.employer_logo || null
+}));
     res.json({
       success: true,
       count: jobs.length,
