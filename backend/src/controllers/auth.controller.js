@@ -107,5 +107,30 @@ const getMe = async (req, res) => {
     });
   }
 };
+const googleAuth = async (req, res) => {
+  try {
+    const { name, email, googleId, avatar } = req.body;
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        password: googleId + process.env.JWT_SECRET,
+        avatar
+      });
+      const Profile = require('../models/profile.model');
+      await Profile.create({ user: user._id });
+    }
+    const token = generateToken(user._id);
+    res.json({
+      success: true,
+      message: 'Google login successful',
+      token,
+      user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-module.exports = { register, login, getMe };
+module.exports = { register, login, getMe, googleAuth };

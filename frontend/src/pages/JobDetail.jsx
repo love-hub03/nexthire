@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import Sidebar from '../components/Sidebar';
 import { checkReadiness, generateRoadmap } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function JobDetail() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const job = state?.job;
 
   const [readiness, setReadiness] = useState(null);
@@ -15,17 +17,31 @@ export default function JobDetail() {
   const [loadingRoadmap, setLoadingRoadmap] = useState(false);
 
   useEffect(() => {
-    if (!job) {
-      navigate('/dashboard');
-      return;
-    }
+    if (!job) { navigate('/dashboard'); return; }
     checkReadiness({
       jobDescription: job.description,
       jobTitle: job.title
-    })
-      .then((res) => setReadiness(res.data.data))
-      .catch(() => toast.error('Failed to analyze readiness'))
-      .finally(() => setLoadingReadiness(false));
+    }).then((res) => {
+      setReadiness(res.data.data);
+      // Save to history
+      const existing = JSON.parse(localStorage.getItem('readiness_history') || '[]');
+      const newEntry = {
+        jobId: job.id,
+        jobTitle: job.title,
+        company: job.company,
+        score: res.data.data.score,
+        verdict: res.data.data.verdict,
+        verdictColor: res.data.data.verdictColor,
+        checkedAt: new Date().toISOString(),
+        job
+      };
+      const updated = [newEntry, ...existing.filter(e => e.jobId !== job.id)].slice(0, 50);
+      localStorage.setItem('readiness_history', JSON.stringify(updated));
+    }).catch(() => {
+      toast.error('Failed to analyze readiness');
+    }).finally(() => {
+      setLoadingReadiness(false);
+    });
   }, []);
 
   const handleGetReady = async () => {
@@ -59,115 +75,141 @@ export default function JobDetail() {
   if (!job) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <Navbar />
-      <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="min-h-screen bg-black flex">
+      <Sidebar user={user} />
+      <div className="ml-56 flex-1 p-8 ">
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+        {/* Job Header */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">{job.title}</h1>
-              <p className="text-blue-400 mt-1">{job.company}</p>
-              <p className="text-gray-400 text-sm mt-2">{job.location}</p>
+              <p className="text-white/50 mt-1">{job.company}</p>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-white/30 text-sm">{job.location}</span>
+                {job.isRemote && (
+                  <span className="bg-green-400/10 text-green-400 text-xs px-2 py-0.5 rounded-full border border-green-400/20">
+                    Remote
+                  </span>
+                )}
+                {job.source && (
+                  <span className="text-white/20 text-xs">via {job.source}</span>
+                )}
+              </div>
+              {job.stipend && (
+                <p className="text-white/40 text-sm mt-2">💰 {job.stipend}</p>
+              )}
             </div>
-            
-             <a
+            <a
               href={job.applyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition"
+              className="bg-white hover:bg-white/90 text-black font-bold px-6 py-3 rounded-xl transition text-sm"
             >
               Apply Now
             </a>
           </div>
         </div>
 
+        {/* Readiness Loading */}
         {loadingReadiness && (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-400 mb-6">
-            Analyzing your readiness for this role...
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center mb-6">
+            <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-white/40 text-sm">Analyzing your readiness for this role...</p>
           </div>
         )}
 
         {!loadingReadiness && readiness && (
           <div className="space-y-4 mb-6">
 
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            {/* Score */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Your Readiness Score</p>
+                  <p className="text-white/30 text-sm">Your Readiness Score</p>
                   <p className="text-5xl font-bold text-white mt-1">
                     {readiness.score}
-                    <span className="text-2xl text-gray-500">/100</span>
+                    <span className="text-2xl text-white/20">/100</span>
                   </p>
                 </div>
-                <div className={`px-4 py-2 rounded-xl border text-lg font-semibold ${getVerdictClass(readiness.verdictColor)}`}>
+                <div className={`px-4 py-2 rounded-xl border text-base font-semibold ${getVerdictClass(readiness.verdictColor)}`}>
                   {readiness.verdict}
                 </div>
               </div>
-              <div className="bg-gray-800 rounded-full h-3">
+              <div className="bg-white/5 rounded-full h-2">
                 <div
-                  className={`h-3 rounded-full transition-all ${getBarClass(readiness.verdictColor)}`}
+                  className={`h-2 rounded-full transition-all ${getBarClass(readiness.verdictColor)}`}
                   style={{ width: `${readiness.score}%` }}
                 />
               </div>
             </div>
 
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+            {/* AI Analysis */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h3 className="text-white font-semibold mb-3">AI Analysis</h3>
-              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
-                {readiness.explanation}
+              <p className="text-white/50 text-sm leading-relaxed whitespace-pre-line">
+                {readiness.explanation?.replace(/\*\*/g, '')}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-                <h3 className="text-green-400 font-semibold mb-3">You Have</h3>
+            {/* Skills */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h3 className="text-green-400 font-semibold mb-3">✓ You Have</h3>
                 <div className="flex flex-wrap gap-2">
-                  {readiness.matchingSkills.length > 0
-                    ? readiness.matchingSkills.map((skill) => (
-                        <span key={skill} className="bg-green-400/10 text-green-400 text-xs px-3 py-1 rounded-full border border-green-400/20">
-                          {skill}
-                        </span>
-                      ))
-                    : <p className="text-gray-500 text-sm">None matched</p>
-                  }
+                  {readiness.matchingSkills?.length > 0 ? (
+                    readiness.matchingSkills.map((skill) => (
+                      <span key={skill} className="bg-green-400/10 text-green-400 text-xs px-3 py-1 rounded-full border border-green-400/20">
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-white/20 text-sm">None matched</p>
+                  )}
                 </div>
               </div>
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-                <h3 className="text-red-400 font-semibold mb-3">You Need</h3>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <h3 className="text-red-400 font-semibold mb-3">✗ You Need</h3>
                 <div className="flex flex-wrap gap-2">
-                  {readiness.missingSkills.length > 0
-                    ? readiness.missingSkills.map((skill) => (
-                        <span key={skill} className="bg-red-400/10 text-red-400 text-xs px-3 py-1 rounded-full border border-red-400/20">
-                          {skill}
-                        </span>
-                      ))
-                    : <p className="text-gray-500 text-sm">Nothing missing!</p>
-                  }
+                  {readiness.missingSkills?.length > 0 ? (
+                    readiness.missingSkills.map((skill) => (
+                      <span key={skill} className="bg-red-400/10 text-red-400 text-xs px-3 py-1 rounded-full border border-red-400/20">
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-white/20 text-sm">Nothing missing!</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {readiness.missingSkills.length > 0 && !roadmap && (
+            {/* Get Ready Button */}
+            {readiness.missingSkills?.length > 0 && !roadmap && (
               <button
                 onClick={handleGetReady}
                 disabled={loadingRoadmap}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition disabled:opacity-50 text-lg"
+                className="w-full bg-white hover:bg-white/90 text-black font-bold py-4 rounded-2xl transition disabled:opacity-50 text-base"
               >
-                {loadingRoadmap ? 'Generating your roadmap...' : 'Get Ready for This Job'}
+                {loadingRoadmap ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    Generating your roadmap...
+                  </span>
+                ) : '🚀 Get Ready for This Job'}
               </button>
             )}
-
           </div>
         )}
 
-        {roadmap && (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        {/* Roadmap */}
+       {roadmap && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <h3 className="text-white font-semibold text-lg mb-4">
               Your Roadmap to {job.title}
             </h3>
-            <pre className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-              {roadmap.roadmap}
+            <pre className="text-white/50 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+              {roadmap.roadmap?.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#{1,6} /g, '')}
             </pre>
           </div>
         )}
