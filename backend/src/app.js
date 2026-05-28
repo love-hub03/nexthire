@@ -10,10 +10,19 @@ const app = express();
 app.use(helmet());
 
 // CORS
-app.use(cors({
-  origin: [
-    "https://nexthire-9cn6e6ved-loveprojects.vercel.app"
-  ],
+aapp.use(cors({
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ];
+    // Allow all vercel.app domains
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 // Rate limiting
