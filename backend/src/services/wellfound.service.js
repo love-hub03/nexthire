@@ -55,7 +55,7 @@ const scrapeWellfound = async (role) => {
         source: 'wellfound',
         jobs,
         cachedAt: new Date(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       },
       { upsert: true, new: true }
     );

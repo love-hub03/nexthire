@@ -3,7 +3,8 @@ import Sidebar from '../components/Sidebar';
 import { getProfile, updateProfile } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Pencil } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const SKILL_CATEGORIES = {
   'Frontend': ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Next.js', 'Vue', 'Angular', 'Tailwind CSS', 'Redux'],
@@ -19,6 +20,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
     headline: '',
     targetRole: '',
@@ -47,6 +49,21 @@ export default function Profile() {
   }, []);
 
   const handleSave = async () => {
+    const result = await Swal.fire({
+      title: 'Save changes?',
+      text: 'Your profile will be updated.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ffffff',
+      cancelButtonColor: '#333333',
+      confirmButtonText: 'Yes, save',
+      cancelButtonText: 'Cancel',
+      background: '#111111',
+      color: '#ffffff',
+    });
+
+    if (!result.isConfirmed) return;
+
     setSaving(true);
     try {
       await updateProfile({
@@ -60,10 +77,41 @@ export default function Profile() {
         }
       });
       toast.success('Profile updated!');
+      setEditMode(false);
+      setShowSkillPicker(false);
     } catch (err) {
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    const result = await Swal.fire({
+      title: 'Discard changes?',
+      text: 'Your unsaved changes will be lost.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ffffff',
+      cancelButtonColor: '#333333',
+      confirmButtonText: 'Yes, discard',
+      cancelButtonText: 'Keep editing',
+      background: '#111111',
+      color: '#ffffff',
+    });
+
+    if (result.isConfirmed) {
+      // Reset to original
+      setForm({
+        headline: profile.headline || '',
+        targetRole: profile.targetRole || '',
+        github: profile.links?.github || '',
+        linkedin: profile.links?.linkedin || '',
+        portfolio: profile.links?.portfolio || '',
+      });
+      setSkills(profile.skills || []);
+      setEditMode(false);
+      setShowSkillPicker(false);
     }
   };
 
@@ -102,9 +150,36 @@ export default function Profile() {
       <Sidebar user={user} />
       <div className="ml-56 flex-1 p-8 max-w-3xl">
 
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Profile</h1>
-          <p className="text-white/30 text-sm mt-1">Manage your career profile and skills</p>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Profile</h1>
+            <p className="text-white/30 text-sm mt-1">Manage your career profile and skills</p>
+          </div>
+          {!editMode ? (
+            <button
+              onClick={() => setEditMode(true)}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm px-4 py-2 rounded-lg transition"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit Profile
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancel}
+                className="text-white/40 hover:text-white text-sm px-4 py-2 rounded-lg border border-white/10 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-white text-black font-bold text-sm px-4 py-2 rounded-lg transition disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Basic Info */}
@@ -121,23 +196,31 @@ export default function Profile() {
             </div>
             <div>
               <label className="text-white/30 text-xs tracking-widest uppercase mb-2 block">Headline</label>
-              <input
-                type="text"
-                value={form.headline}
-                onChange={(e) => setForm({ ...form, headline: e.target.value })}
-                className="w-full bg-transparent border-b border-white/10 focus:border-white/30 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
-                placeholder="e.g. Full Stack Developer | React & Node.js"
-              />
+              {editMode ? (
+                <input
+                  type="text"
+                  value={form.headline}
+                  onChange={(e) => setForm({ ...form, headline: e.target.value })}
+                  className="w-full bg-transparent border-b border-white/20 focus:border-white/40 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
+                  placeholder="e.g. Full Stack Developer | React & Node.js"
+                />
+              ) : (
+                <p className="text-white/60 text-sm">{form.headline || '—'}</p>
+              )}
             </div>
             <div>
               <label className="text-white/30 text-xs tracking-widest uppercase mb-2 block">Target Role</label>
-              <input
-                type="text"
-                value={form.targetRole}
-                onChange={(e) => setForm({ ...form, targetRole: e.target.value })}
-                className="w-full bg-transparent border-b border-white/10 focus:border-white/30 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
-                placeholder="e.g. Frontend Developer Intern"
-              />
+              {editMode ? (
+                <input
+                  type="text"
+                  value={form.targetRole}
+                  onChange={(e) => setForm({ ...form, targetRole: e.target.value })}
+                  className="w-full bg-transparent border-b border-white/20 focus:border-white/40 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
+                  placeholder="e.g. Frontend Developer Intern"
+                />
+              ) : (
+                <p className="text-white/60 text-sm">{form.targetRole || '—'}</p>
+              )}
             </div>
           </div>
         </div>
@@ -153,13 +236,17 @@ export default function Profile() {
             ].map((link) => (
               <div key={link.key}>
                 <label className="text-white/30 text-xs tracking-widest uppercase mb-2 block">{link.label}</label>
-                <input
-                  type="text"
-                  value={form[link.key]}
-                  onChange={(e) => setForm({ ...form, [link.key]: e.target.value })}
-                  className="w-full bg-transparent border-b border-white/10 focus:border-white/30 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
-                  placeholder={link.placeholder}
-                />
+                {editMode ? (
+                  <input
+                    type="text"
+                    value={form[link.key]}
+                    onChange={(e) => setForm({ ...form, [link.key]: e.target.value })}
+                    className="w-full bg-transparent border-b border-white/20 focus:border-white/40 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
+                    placeholder={link.placeholder}
+                  />
+                ) : (
+                  <p className="text-white/60 text-sm">{form[link.key] || '—'}</p>
+                )}
               </div>
             ))}
           </div>
@@ -169,16 +256,17 @@ export default function Profile() {
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-white font-semibold">Skills ({skills.length})</h2>
-            <button
-              onClick={() => setShowSkillPicker(!showSkillPicker)}
-              className="flex items-center gap-2 text-white/40 hover:text-white text-sm transition"
-            >
-              <Plus className="w-4 h-4" />
-              Add Skills
-            </button>
+            {editMode && (
+              <button
+                onClick={() => setShowSkillPicker(!showSkillPicker)}
+                className="flex items-center gap-2 text-white/40 hover:text-white text-sm transition"
+              >
+                <Plus className="w-4 h-4" />
+                Add Skills
+              </button>
+            )}
           </div>
 
-          {/* Current skills */}
           <div className="flex flex-wrap gap-2 mb-4">
             {skills.map((skill) => (
               <div
@@ -186,12 +274,14 @@ export default function Profile() {
                 className="flex items-center gap-2 bg-white/10 border border-white/10 text-white text-xs px-3 py-1.5 rounded-full"
               >
                 <span>{skill.displayName || skill.name}</span>
-                <button
-                  onClick={() => removeSkill(skill.name)}
-                  className="text-white/30 hover:text-white transition"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                {editMode && (
+                  <button
+                    onClick={() => removeSkill(skill.name)}
+                    className="text-white/30 hover:text-white transition"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             ))}
             {skills.length === 0 && (
@@ -199,10 +289,8 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Skill picker */}
-          {showSkillPicker && (
+          {editMode && showSkillPicker && (
             <div className="border-t border-white/10 pt-4">
-              {/* Custom skill input */}
               <div className="flex gap-2 mb-4">
                 <input
                   type="text"
@@ -212,15 +300,10 @@ export default function Profile() {
                   className="flex-1 bg-transparent border-b border-white/10 focus:border-white/30 text-white text-sm py-2 focus:outline-none transition placeholder-white/20"
                   placeholder="Type a skill and press Enter"
                 />
-                <button
-                  onClick={handleAddCustomSkill}
-                  className="text-white/40 hover:text-white text-sm transition px-3"
-                >
+                <button onClick={handleAddCustomSkill} className="text-white/40 hover:text-white text-sm transition px-3">
                   Add
                 </button>
               </div>
-
-              {/* Category buttons */}
               {Object.entries(SKILL_CATEGORIES).map(([category, categorySkills]) => (
                 <div key={category} className="mb-4">
                   <p className="text-white/20 text-xs uppercase tracking-widest mb-2">{category}</p>
@@ -247,15 +330,6 @@ export default function Profile() {
             </div>
           )}
         </div>
-
-        {/* Save button */}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full py-4 rounded-full font-bold text-black text-sm bg-white hover:bg-white/90 transition disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save Profile'}
-        </button>
 
       </div>
     </div>

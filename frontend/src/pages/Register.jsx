@@ -43,7 +43,11 @@ export default function Register() {
       });
       login(res.data.token, res.data.user);
       toast.success('Account created!');
-      navigate('/onboard');
+      if (res.data.isNewUser) {
+        navigate('/onboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Google signup failed');
     } finally {

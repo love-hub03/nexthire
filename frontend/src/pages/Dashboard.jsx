@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { Bookmark } from 'lucide-react';
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,28 +43,41 @@ export default function Dashboard() {
   };
 
   const scoreJobs = async (jobList) => {
-    setScoring(true);
-    const scored = [];
-    for (const job of jobList) {
+  setScoring(true);
+  const results = await Promise.all(
+    jobList.map(async (job) => {
       try {
         const res = await checkReadiness({
           jobDescription: job.description,
           jobTitle: job.title
         });
-        scored.push({ ...job, readiness: res.data.data });
+        return { ...job, readiness: res.data.data };
       } catch {
-        scored.push({ ...job, readiness: null });
+        return { ...job, readiness: null };
       }
-      setScoredJobs([...scored]);
+    })
+  );
+  const sorted = results.sort((a, b) => (b.readiness?.score || 0) - (a.readiness?.score || 0));
+  setScoredJobs(sorted);
+  const validScores = sorted.filter(j => j.readiness?.score > 0);
+  const avg = validScores.length > 0
+    ? Math.round(validScores.reduce((sum, j) => sum + j.readiness.score, 0) / validScores.length)
+    : 0;
+  setOverallScore(avg);
+  setScoring(false);
+};
+  const handleSaveJob = (e, job) => {
+    e.stopPropagation();
+    const key = `saved_jobs_${user?.id}`;
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    const exists = saved.find(s => s.id === job.id);
+    if (exists) {
+      localStorage.setItem(key, JSON.stringify(saved.filter(s => s.id !== job.id)));
+      toast.success('Job removed from saved');
+    } else {
+      localStorage.setItem(key, JSON.stringify([...saved, job]));
+      toast.success('Job saved!');
     }
-    scored.sort((a, b) => (b.readiness?.score || 0) - (a.readiness?.score || 0));
-    setScoredJobs([...scored]);
-   const validScores = scored.filter(j => j.readiness?.score > 0);
-   const avg = validScores.length > 0
-  ? Math.round(validScores.reduce((sum, j) => sum + j.readiness.score, 0) / validScores.length)
-  : 0;
-    setOverallScore(avg);
-    setScoring(false);
   };
 
   const readyJobs = scoredJobs.filter(j => j.readiness?.verdictColor === 'green');
@@ -126,8 +140,6 @@ export default function Dashboard() {
         {/* Top row */}
         {overallScore > 0 && (
           <div className="grid grid-cols-3 gap-6 mb-6">
-
-            {/* Gauge */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <p className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4">Career Readiness</p>
               <div className="flex items-center gap-4">
@@ -158,7 +170,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Position stats */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-xs font-semibold text-white/30 uppercase tracking-wider">Your Position</p>
@@ -190,12 +201,12 @@ export default function Dashboard() {
         {/* Loading */}
         {loading && <DashboardSkeleton />}
 
-       {scoring && !loading && (
-  <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
-    <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-    <p className="text-white/50 text-sm">Analyzing your readiness for each job... {scoredJobs.length} done</p>
-  </div>
-)}
+        {scoring && !loading && (
+          <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl p-4 mb-4">
+            <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+            <p className="text-white/50 text-sm">Analyzing your readiness for each job... {scoredJobs.length} done</p>
+          </div>
+        )}
 
         {/* Jobs */}
         {scoredJobs.length > 0 && (
@@ -265,19 +276,8 @@ export default function Dashboard() {
                       Apply Now
                     </a>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const saved = JSON.parse(localStorage.getItem('saved_jobs') || '[]');
-                        const exists = saved.find(s => s.id === job.id);
-                        if (exists) {
-                          localStorage.setItem('saved_jobs', JSON.stringify(saved.filter(s => s.id !== job.id)));
-                          toast.success('Job removed from saved');
-                        } else {
-                          localStorage.setItem('saved_jobs', JSON.stringify([...saved, job]));
-                          toast.success('Job saved!');
-                        }
-                      }}
-                      className="text-white/20 hover:text-white transition"
+                      onClick={(e) => handleSaveJob(e, job)}
+                      className="text-white/20 hover:text-white transition p-1"
                     >
                       <Bookmark className="w-4 h-4" />
                     </button>

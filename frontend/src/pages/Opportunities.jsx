@@ -44,24 +44,29 @@ export default function Opportunities() {
   };
 
   const scoreJobs = async (jobList) => {
-    setScoring(true);
-    const scored = [];
-    for (const job of jobList) {
-      try {
-        const res = await checkReadiness({
-          jobDescription: job.description,
-          jobTitle: job.title
-        });
-        scored.push({ ...job, readiness: res.data.data });
-      } catch {
-        scored.push({ ...job, readiness: null });
-      }
-      setScoredJobs([...scored]);
+  setScoring(true);
+  const scored = [];
+  for (const job of jobList) {
+    try {
+      const res = await checkReadiness({
+        jobDescription: job.description,
+        jobTitle: job.title
+      });
+      scored.push({ ...job, readiness: res.data.data });
+    } catch {
+      scored.push({ ...job, readiness: null });
     }
-    scored.sort((a, b) => (b.readiness?.score || 0) - (a.readiness?.score || 0));
     setScoredJobs([...scored]);
-    setScoring(false);
-  };
+  }
+  scored.sort((a, b) => (b.readiness?.score || 0) - (a.readiness?.score || 0));
+  setScoredJobs([...scored]);
+  const validScores = scored.filter(j => j.readiness?.score > 0);
+  const avg = validScores.length > 0
+    ? Math.round(validScores.reduce((sum, j) => sum + j.readiness.score, 0) / validScores.length)
+    : 0;
+  setOverallScore(avg);
+  setScoring(false);
+};
 
   const filtered = scoredJobs.filter(j => {
     if (filter === 'ready') return j.readiness?.verdictColor === 'green';
@@ -205,7 +210,7 @@ export default function Opportunities() {
                   }}
                   className="text-white/20 hover:text-white transition p-2"
                 >
-                  <Bookmark className="w-4 h-4" />
+                 
                 </button>
                     <a
                       href={job.applyUrl}
@@ -219,13 +224,13 @@ export default function Opportunities() {
                                           <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const saved = JSON.parse(localStorage.getItem('saved_jobs') || '[]');
+                          const saved = JSON.parse(localStorage.getItem(`saved_jobs_${user?.id}`) || '[]');
                           const exists = saved.find(s => s.id === job.id);
                           if (exists) {
-                            localStorage.setItem('saved_jobs', JSON.stringify(saved.filter(s => s.id !== job.id)));
+                            localStorage.setItem(`saved_jobs_${user?.id}`, JSON.stringify(saved.filter(s => s.id !== job.id)));
                             toast.success('Job removed from saved');
                           } else {
-                            localStorage.setItem('saved_jobs', JSON.stringify([...saved, job]));
+                            localStorage.setItem(`saved_jobs_${user?.id}`, JSON.stringify([...saved, job]));
                             toast.success('Job saved!');
                           }
                         }}

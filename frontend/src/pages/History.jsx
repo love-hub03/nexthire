@@ -2,31 +2,54 @@ import { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 export default function History() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  // Get history from localStorage
   const [history, setHistory] = useState([]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('readiness_history');
-    if (saved) {
-      setHistory(JSON.parse(saved));
-    }
-  }, []);
+  const storageKey = `readiness_history_${user?.id}`;
 
-  const clearHistory = () => {
-    localStorage.removeItem('readiness_history');
-    setHistory([]);
+  useEffect(() => {
+    if (user?.id) {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) setHistory(JSON.parse(saved));
+    }
+  }, [user]);
+
+  const clearHistory = async () => {
+    const result = await Swal.fire({
+      title: 'Clear all history?',
+      text: 'This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ffffff',
+      cancelButtonColor: '#333333',
+      confirmButtonText: 'Yes, clear',
+      cancelButtonText: 'Cancel',
+      background: '#111111',
+      color: '#ffffff',
+    });
+
+    if (result.isConfirmed) {
+      localStorage.removeItem(storageKey);
+      setHistory([]);
+      Swal.fire({
+        title: 'Cleared!',
+        icon: 'success',
+        background: '#111111',
+        color: '#ffffff',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-black flex">
       <Sidebar user={user} />
       <div className="ml-56 flex-1 p-8 max-w-3xl">
-
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white">History</h1>
@@ -46,9 +69,7 @@ export default function History() {
           <div className="bg-white/5 border border-white/10 rounded-2xl p-12 text-center">
             <p className="text-white/20 text-4xl mb-4">📋</p>
             <p className="text-white font-semibold mb-2">No history yet</p>
-            <p className="text-white/30 text-sm mb-6">
-              Your readiness checks will appear here after you analyze jobs
-            </p>
+            <p className="text-white/30 text-sm mb-6">Your readiness checks will appear here</p>
             <button
               onClick={() => navigate('/opportunities')}
               className="bg-white/10 hover:bg-white/20 text-white text-sm px-6 py-2 rounded-full transition"

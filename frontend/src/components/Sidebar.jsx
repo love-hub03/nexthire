@@ -10,7 +10,7 @@ import {
   Clock,
   LogOut,
 } from 'lucide-react';
-
+import Swal from 'sweetalert2';
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/opportunities', label: 'Opportunities', icon: Briefcase },
@@ -26,11 +26,24 @@ export default function Sidebar({ user }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  const handleLogout = () => {
+ const handleLogout = async () => {
+  const result = await Swal.fire({
+    title: 'Logout?',
+    text: 'Are you sure you want to logout?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#ffffff',
+    cancelButtonColor: '#333333',
+    confirmButtonText: 'Yes, logout',
+    cancelButtonText: 'Cancel',
+    background: '#111111',
+    color: '#ffffff',
+  });
+  if (result.isConfirmed) {
     logout();
-    toast.success('Logged out');
     navigate('/login');
-  };
+  }
+};
 
   return (
     <div className="fixed left-0 top-0 h-full w-56 flex flex-col z-10"

@@ -24,7 +24,7 @@ export default function JobDetail() {
     }).then((res) => {
       setReadiness(res.data.data);
       // Save to history
-      const existing = JSON.parse(localStorage.getItem('readiness_history') || '[]');
+     const existing = JSON.parse(localStorage.getItem(`readiness_history_${user?.id}`) || '[]');
       const newEntry = {
         jobId: job.id,
         jobTitle: job.title,
@@ -36,7 +36,7 @@ export default function JobDetail() {
         job
       };
       const updated = [newEntry, ...existing.filter(e => e.jobId !== job.id)].slice(0, 50);
-      localStorage.setItem('readiness_history', JSON.stringify(updated));
+      localStorage.setItem(`readiness_history_${user?.id}`, JSON.stringify(updated));
     }).catch(() => {
       toast.error('Failed to analyze readiness');
     }).finally(() => {
@@ -152,40 +152,10 @@ export default function JobDetail() {
               </p>
             </div>
 
-            {/* Skills */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <h3 className="text-green-400 font-semibold mb-3">✓ You Have</h3>
-                <div className="flex flex-wrap gap-2">
-                  {readiness.matchingSkills?.length > 0 ? (
-                    readiness.matchingSkills.map((skill) => (
-                      <span key={skill} className="bg-green-400/10 text-green-400 text-xs px-3 py-1 rounded-full border border-green-400/20">
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-white/20 text-sm">None matched</p>
-                  )}
-                </div>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <h3 className="text-red-400 font-semibold mb-3">✗ You Need</h3>
-                <div className="flex flex-wrap gap-2">
-                  {readiness.missingSkills?.length > 0 ? (
-                    readiness.missingSkills.map((skill) => (
-                      <span key={skill} className="bg-red-400/10 text-red-400 text-xs px-3 py-1 rounded-full border border-red-400/20">
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-white/20 text-sm">Nothing missing!</p>
-                  )}
-                </div>
-              </div>
-            </div>
+           
 
             {/* Get Ready Button */}
-            {readiness.missingSkills?.length > 0 && !roadmap && (
+            {!roadmap && (
               <button
                 onClick={handleGetReady}
                 disabled={loadingRoadmap}

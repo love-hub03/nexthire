@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "ai": "cd ../ai-service && uvicorn main:app --reload --port 8000"
   },
   "keywords": [],
   "author": "",
