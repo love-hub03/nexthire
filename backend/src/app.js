@@ -11,9 +11,11 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: "https://nexthire-kq8q996t7-loveprojects.vercel.app",
+  origin: [
+    "https://nexthire-9cn6e6ved-loveprojects.vercel.app"
+  ],
   credentials: true
-}));;
+}));
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

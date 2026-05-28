@@ -35,7 +35,7 @@ export default function Register() {
     try {
       const result = await signInWithGoogle();
       const { user } = result;
-      const res = await axios.post('http://localhost:5000/api/auth/google', {
+      const res = await axios.post(`${import.meta.env.backend_API_URL}/api/auth/google`, {
         name: user.displayName,
         email: user.email,
         googleId: user.uid,
