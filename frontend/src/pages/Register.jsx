@@ -35,12 +35,15 @@ export default function Register() {
     try {
       const result = await signInWithGoogle();
       const { user } = result;
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
-        name: user.displayName,
-        email: user.email,
-        googleId: user.uid,
-        avatar: user.photoURL
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/google`,
+        {
+          name: user.displayName,
+          email: user.email,
+          googleId: user.uid,
+          avatar: user.photoURL
+        }
+      );
       login(res.data.token, res.data.user);
       toast.success('Account created!');
       if (res.data.isNewUser) {
@@ -57,8 +60,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-black flex overflow-hidden" style={{ perspective: '1200px' }}>
-
-      {/* Left Panel — STATIC, no animation */}
       <div
         className="hidden md:flex w-1/2 min-h-screen flex-col justify-between p-16 relative overflow-hidden"
         style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #1a1a1a 100%)' }}
@@ -102,7 +103,6 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Right Panel — FLIP animation from Login */}
       <motion.div
         initial={{ rotateY: 90, opacity: 0 }}
         animate={{ rotateY: 0, opacity: 1 }}
