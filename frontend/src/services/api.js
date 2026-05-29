@@ -3,6 +3,7 @@ import axios from 'axios';
 const API = axios.create({
   baseURL: `https://nexthire-oliw.onrender.com/api`,
   withCredentials: true,
+  timeout: 60000 
 });
 
 // Automatically attach token to every request
