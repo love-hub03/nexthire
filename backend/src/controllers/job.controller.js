@@ -19,7 +19,7 @@ const getJobs = async (req, res) => {
         params: {
           query: `${role} internship in ${location}`,
           page,
-          num_pages:2 ,
+          num_pages:3 ,
           date_posted: 'month'
         },
         headers: {
@@ -30,7 +30,7 @@ const getJobs = async (req, res) => {
 
       // Remotive - Free remote jobs
       axios.get('https://remotive.com/api/remote-jobs', {
-        params: { search: role, limit:20}
+        params: { search: role, limit:15}
       }),
 
       // Internshala - via Apify with smart caching

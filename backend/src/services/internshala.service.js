@@ -60,7 +60,7 @@ const scrapeInternshala = async (role) => {
     const run = await client.actor('logiover/internshala-scraper').call({
       listingType: 'internships',
       categories: [category],
-      maxResults: 20,
+      maxResults: 35,
       scrapeDetails: false,
     });
 

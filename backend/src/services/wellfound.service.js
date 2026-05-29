@@ -26,7 +26,7 @@ const scrapeWellfound = async (role) => {
     const run = await client.actor('crawlerbros/wellfound-scraper').call({
       startUrls: [{ url: 'https://wellfound.com/jobs' }],
       keyword: role,
-      maxResults: 15,
+      maxResults: 35,
     });
 
     const { items } = await client.dataset(run.defaultDatasetId).listItems();
